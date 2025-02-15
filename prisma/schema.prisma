@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Address {
+  id         String    @id
+  street     String
+  city       String
+  postalCode String?
+  userId     String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  country    String
+  User       User      @relation(fields: [userId], references: [id])
+  Order      Order[]
+}
+
+model Category {
+  id          String     @id
+  name        String     @unique
+  image       String?
+  description String?
+  slug        String
+  parentId    String?
+  projectId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  deletedAt   DateTime?
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  Project     Project    @relation(fields: [projectId], references: [id])
+  Product     Product[]
+
+  @@unique([slug, projectId])
+  @@index([parentId])
+}
+
+model Order {
+  id           String         @id
+  userId       String
+  projectId    String
+  addressId    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  status       String
+  type         String
+  note         String?
+  Address      Address        @relation(fields: [addressId], references: [id])
+  Project      Project        @relation(fields: [projectId], references: [id])
+  User         User           @relation(fields: [userId], references: [id])
+  OrderProduct OrderProduct[]
+}
+
+model OrderProduct {
+  id        String  @id
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  currency  String
+  Order     Order   @relation(fields: [orderId], references: [id])
+  Product   Product @relation(fields: [productId], references: [id])
+}
+
+model Product {
+  id           String         @id
+  name         String
+  description  Json[]
+  quantity     Int            @default(0)
+  price        Float          @default(0)
+  currency     String
+  supplierId   String
+  projectId    String
+  mediaUrls    String[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  deletedAt    DateTime?
+  OrderProduct OrderProduct[]
+  Project      Project        @relation(fields: [projectId], references: [id])
+  Supplier     Supplier       @relation(fields: [supplierId], references: [id])
+  Category     Category[]
+}
+
+model Project {
+  id        String     @id
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+  deletedAt DateTime?
+  Category  Category[]
+  Order     Order[]
+  Product   Product[]
+  Supplier  Supplier[]
+  User      User[]
+}
+
+model Supplier {
+  id          String    @id
+  name        String    @unique
+  logo        String?
+  description String?
+  slug        String
+  projectId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  deletedAt   DateTime?
+  Product     Product[]
+  Project     Project   @relation(fields: [projectId], references: [id])
+
+  @@unique([slug, projectId])
+}
+
+model User {
+  id      String    @id
+  name    String?
+  email   String    @unique
+  image   String?
+  role    String    @default("customer")
+  Address Address[]
+  Order   Order[]
+  Project Project[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
