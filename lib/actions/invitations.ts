@@ -1,19 +1,22 @@
 'use server'
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-
+import { auth } from "@clerk/nextjs/server";
+        
 interface CreateInvitationInput {
   emailAddress: string;
   role: string;
 }
 
 export async function createInvitation(data: CreateInvitationInput) {
+  const { getToken } = await auth();
+  const token = await getToken();
   try {
     const response = await fetch('/api/invitations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     });
@@ -67,4 +70,4 @@ export async function revokeInvitation(invitationId: string) {
     console.error('Error revoking invitation:', error);
     throw error;
   }
-} 
+}

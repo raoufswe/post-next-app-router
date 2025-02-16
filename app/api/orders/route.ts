@@ -14,12 +14,8 @@ export async function GET(request: NextRequest) {
       projectId,
     },
     include: {
-      User: true,
-      OrderProduct: {
-        include: {
-          Product: true,
-        },
-      },
+      user: true,
+      orderProducts: true,
     },
     orderBy: {
       createdAt: 'desc',

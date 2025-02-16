@@ -15,7 +15,7 @@ export async function PATCH(
     where: { id: params.id },
     data: {
       ...rest,
-      Category: {
+      category: {
         set: categoryIds.map((categoryId) => ({ id: categoryId })),
       },
     },
@@ -63,8 +63,8 @@ export async function GET(
   const product = await prisma.product.findUnique({
     where: { id },
     include: {
-      Category: true,
-      Supplier: true,
+      category: true,
+      supplier: true,
     },
   });
 

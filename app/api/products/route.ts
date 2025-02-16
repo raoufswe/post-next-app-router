@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     deletedAt: null,
     projectId,
     ...(categorySlug && {
-      Category: {
+      category: {
         some: { slug: categorySlug },
       },
     }),
@@ -26,20 +26,19 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: 'asc' },
     where,
     include: {
-      Category: {
+      categories: {
         where: { deletedAt: null },
         orderBy: { createdAt: 'asc' },
       },
-      Supplier: true,
+      supplier: true,
     },
   });
 
   return Response.json(
     products.map((product) => ({
       ...product,
-      categoryIds: product.Category.map((c) => c.id),
-      categories: product.Category,
-      supplier: product.Supplier,
+      categoryIds: product.categories.map((i) => i.id),
+
     }))
   );
 }
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
     data: {
       ...rest,
       projectId,
-      Category: { 
+      category: { 
         connect: categoryIds.map((id) => ({ id })) 
       },
     },

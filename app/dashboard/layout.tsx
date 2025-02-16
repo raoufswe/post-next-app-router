@@ -1,52 +1,56 @@
-"use client";
-
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { getBreadcrumb } from "@/lib/get-breadcrumb";
-import { usePathname } from "next/navigation";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { items, title } = getBreadcrumb(pathname);
+async function getUserData() {
+  const cookieStore = await cookies();
+  const { getToken } = await auth();
+  const token = await getToken();
+
+  const userResponse = await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/users/me`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }
+  );
+
+  const userData = await userResponse.json();
+  if (!userData.projects?.length) {
+    redirect("/onboarding");
+  }
+
+  const selectedProjectId = cookieStore.get("selectedProjectId")?.value;
+  const selectedProject =
+    userData.projects.find((p) => p.id === selectedProjectId) ??
+    userData.projects[0];
+
+  if (!selectedProjectId) {
+    cookieStore.set("selectedProjectId", selectedProject.id, { path: "/" });
+  }
+
+  return {
+    projects: userData.projects,
+    selectedProject,
+    user: userData,
+  };
+}
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const data = await getUserData();
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar data={data} />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                {items.map((item, index) => (
-                  <BreadcrumbItem key={index}>
-                    <BreadcrumbLink href={item.href}>
-                      {item.title}
-                    </BreadcrumbLink>
-                    <BreadcrumbSeparator />
-                  </BreadcrumbItem>
-                ))}
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{title}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
+        <DashboardHeader />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>

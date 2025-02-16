@@ -10,7 +10,8 @@ import {
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
 interface OrderProduct {
   id: string;
   price: number;
@@ -25,7 +26,7 @@ interface OrderProduct {
 interface Order {
   id: string;
   status: "paid" | "unpaid" | "cancelled";
-  User: {
+  user: {
     id: string;
     name: string | null;
   };
@@ -38,11 +39,18 @@ const STATUS_STYLES = {
   cancelled: "bg-red-100 text-red-800",
 } as const;
 
-async function getOrders(projectId: string): Promise<Order[]> {
+async function getOrders(): Promise<Order[]> {
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
+  const { getToken } = await auth();
+  const token = await getToken();
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL}/api/orders?projectId=${projectId}`,
     {
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
 
@@ -53,14 +61,8 @@ async function getOrders(projectId: string): Promise<Order[]> {
   return res.json();
 }
 
-export default async function OrdersPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const orders = await getOrders(
-    (searchParams?.projectId as string) ?? "cllznpdh70000q2x6ej91bkyu"
-  );
+export default async function OrdersPage() {
+  const orders = await getOrders();
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,7 +91,7 @@ export default async function OrdersPage({
             {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell>{order.id}</TableCell>
-                <TableCell>{order.User.name ?? "Anonymous"}</TableCell>
+                <TableCell>{order.user.name ?? "Anonymous"}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -101,11 +103,11 @@ export default async function OrdersPage({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {order.OrderProduct.reduce(
+                  {order.orderProducts.reduce(
                     (acc, item) => acc + item.price * item.quantity,
                     0
                   )}{" "}
-                  {order.OrderProduct[0]?.currency}
+                  {order.orderProducts[0]?.currency}
                 </TableCell>
                 <TableCell className="flex items-center gap-2">
                   <Button variant="outline" size="sm" asChild>

@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,124 +10,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String    @id @default(cuid())
+  name      String?
+  email     String    @unique
+  image     String?
+  projects  Project[]
+  role      String    @default("customer") // super_admin || admin || customer || guest_cusomer
+  orders    Order[]
+  addresses Address[]
+}
+
 model Address {
-  id         String    @id
+  id         String    @id @default(cuid())
+  country    String
   street     String
   city       String
   postalCode String?
+  user       User      @relation(fields: [userId], references: [id])
+  orders     Order[]
   userId     String
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now())
   deletedAt  DateTime?
-  country    String
-  User       User      @relation(fields: [userId], references: [id])
-  Order      Order[]
-}
-
-model Category {
-  id          String     @id
-  name        String     @unique
-  image       String?
-  description String?
-  slug        String
-  parentId    String?
-  projectId   String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now())
-  deletedAt   DateTime?
-  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryToCategory")
-  Project     Project    @relation(fields: [projectId], references: [id])
-  Product     Product[]
-
-  @@unique([slug, projectId])
-  @@index([parentId])
-}
-
-model Order {
-  id           String         @id
-  userId       String
-  projectId    String
-  addressId    String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
-  status       String
-  type         String
-  note         String?
-  Address      Address        @relation(fields: [addressId], references: [id])
-  Project      Project        @relation(fields: [projectId], references: [id])
-  User         User           @relation(fields: [userId], references: [id])
-  OrderProduct OrderProduct[]
-}
-
-model OrderProduct {
-  id        String  @id
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-  currency  String
-  Order     Order   @relation(fields: [orderId], references: [id])
-  Product   Product @relation(fields: [productId], references: [id])
-}
-
-model Product {
-  id           String         @id
-  name         String
-  description  Json[]
-  quantity     Int            @default(0)
-  price        Float          @default(0)
-  currency     String
-  supplierId   String
-  projectId    String
-  mediaUrls    String[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now())
-  deletedAt    DateTime?
-  OrderProduct OrderProduct[]
-  Project      Project        @relation(fields: [projectId], references: [id])
-  Supplier     Supplier       @relation(fields: [supplierId], references: [id])
-  Category     Category[]
-}
-
-model Project {
-  id        String     @id
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  deletedAt DateTime?
-  Category  Category[]
-  Order     Order[]
-  Product   Product[]
-  Supplier  Supplier[]
-  User      User[]
-}
-
-model Supplier {
-  id          String    @id
-  name        String    @unique
-  logo        String?
-  description String?
-  slug        String
-  projectId   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-  deletedAt   DateTime?
-  Product     Product[]
-  Project     Project   @relation(fields: [projectId], references: [id])
-
-  @@unique([slug, projectId])
-}
-
-model User {
-  id      String    @id
-  name    String?
-  email   String    @unique
-  image   String?
-  role    String    @default("customer")
-  Address Address[]
-  Order   Order[]
-  Project Project[]
 }
 
 model VerificationToken {
@@ -133,4 +41,106 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Project {
+  id   String @id @default(cuid())
+  name String
+  size String
+
+  users      User[]
+  products   Product[]
+  categories Category[]
+  suppliers  Supplier[]
+  orders     Order[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  deletedAt DateTime?
+}
+
+model Supplier {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  logo        String?
+  description String?
+  slug        String
+  products    Product[]
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  @@unique([slug, projectId])
+}
+
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  description   Json[]
+  quantity      Int            @default(0)
+  price         Float          @default(0)
+  currency      String
+  supplier      Supplier       @relation(fields: [supplierId], references: [id])
+  supplierId    String
+  categories    Category[]
+  project       Project        @relation(fields: [projectId], references: [id])
+  projectId     String
+  mediaUrls     String[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+  deletedAt     DateTime?
+  orderProducts OrderProduct[]
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  image       String?
+  description String?
+  slug        String
+  products    Product[]
+  parentId    String?
+  parent      Category?  @relation("parentChildren", fields: [parentId], references: [id])
+  children    Category[] @relation("parentChildren")
+  project     Project    @relation(fields: [projectId], references: [id])
+  projectId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  deletedAt   DateTime?
+
+  @@unique([slug, projectId])
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  addressId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  status String // paid || unpaid || cancelled || inquiry
+
+  type String // dashboard || store
+
+  note    String?
+  address Address @relation(fields: [addressId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  orderProducts OrderProduct[]
+}
+
+model OrderProduct {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  currency  String
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }

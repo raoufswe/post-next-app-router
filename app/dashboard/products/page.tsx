@@ -10,14 +10,20 @@ import {
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
-
-async function getProducts(projectId: string, categorySlug?: string) {
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
+async function getProducts() {
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
+  const { getToken } = await auth();
+  const token = await getToken();
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/products?projectId=${projectId}${
-      categorySlug ? `&categorySlug=${categorySlug}` : ""
-    }`,
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/products?projectId=${projectId}`,
     {
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
 
@@ -28,15 +34,8 @@ async function getProducts(projectId: string, categorySlug?: string) {
   return res.json();
 }
 
-export default async function ProductsPage({
-  searchParams: { projectId, categorySlug },
-}: {
-  searchParams: { projectId: string; categorySlug?: string };
-}) {
-  const products = await getProducts(
-    projectId ?? "cllznpdh70000q2x6ej91bkyu",
-    categorySlug
-  );
+export default async function ProductsPage() {
+  const products = await getProducts();
 
   return (
     <div className="flex flex-col gap-4">

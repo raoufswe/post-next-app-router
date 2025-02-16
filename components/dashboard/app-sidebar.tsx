@@ -1,11 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
-
 import { NavMain } from "@/components/dashboard/nav-main";
 import { NavUser } from "@/components/dashboard/nav-user";
-import { TeamSwitcher } from "@/components/dashboard/team-switcher";
+import { ProjectSwitcher } from "@/components/dashboard/project-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -13,37 +11,26 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Project, User } from "@prisma/client";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-};
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  data: {
+    projects: Project[];
+    selectedProject: Project;
+    user: User & {
+      projects: Project[];
+    };
+  };
+}
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ data, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <ProjectSwitcher
+          projects={data.projects}
+          selectedProject={data.selectedProject}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavMain />

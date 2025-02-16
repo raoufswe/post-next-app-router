@@ -25,15 +25,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
 import { Badge } from "@/components/ui/badge";
+import { User } from "@prisma/client";
 
-export function NavUser() {
-  const { user, isLoaded } = useUser();
+export function NavUser({ user }: { user: User }) {
   const { openUserProfile } = useClerk();
   const { isMobile } = useSidebar();
 
-  if (!isLoaded || !user) return null;
+  const lastName = user.name?.split(" ").slice(1).join(" ");
 
   return (
     <SidebarMenu>
@@ -45,21 +45,16 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage
-                  src={user.imageUrl}
-                  alt={user.fullName || "User"}
-                />
+                <AvatarImage src={user.image} alt={user.name || "User"} />
                 <AvatarFallback className="rounded-lg">
-                  {user.firstName?.charAt(0) || "U"}
+                  {user.name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {user.fullName || "User"}
+                  {user.name || "User"}
                 </span>
-                <span className="truncate text-xs">
-                  {user.primaryEmailAddress?.emailAddress}
-                </span>
+                <span className="truncate text-xs">{user.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -73,21 +68,16 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={user.imageUrl}
-                    alt={user.fullName || "User"}
-                  />
+                  <AvatarImage src={user.image} alt={user.name || "User"} />
                   <AvatarFallback className="rounded-lg">
-                    {user.firstName?.charAt(0) || "U"}
+                    {user.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
-                    {user.fullName || "User"}
+                    {user.name || "User"}
                   </span>
-                  <span className="truncate text-xs">
-                    {user.primaryEmailAddress?.emailAddress}
-                  </span>
+                  <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>

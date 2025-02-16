@@ -1,32 +1,28 @@
 import { UsersTable } from "@/components/dashboard/users/users-table";
-import { clerkClient } from "@clerk/nextjs/server";
 import { InviteUserDialog } from "@/components/dashboard/users/invite-user-dialog";
-
-type InvitationStatus = "accepted" | "pending" | "revoked";
-
-interface Invitation {
-  id: string;
-  emailAddress: string;
-  status: InvitationStatus;
-  publicMetadata: {
-    role?: string;
-    isInvited?: boolean;
-    invitedBy?: string;
-  } | null;
-}
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
 
 async function getInvitations() {
-  const clerk = await clerkClient();
-  const { data } = await clerk.invitations.getInvitationList();
-
-  return data.map(
-    (invitation): Invitation => ({
-      id: invitation.id,
-      emailAddress: invitation.emailAddress,
-      status: invitation.status as InvitationStatus,
-      publicMetadata: invitation.publicMetadata,
-    })
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
+  const { getToken } = await auth();
+  const token = await getToken();
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations?projectId=${projectId}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
   );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch invitations");
+  }
+
+  return response.json();
 }
 
 export default async function UsersPage() {

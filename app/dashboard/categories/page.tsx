@@ -9,12 +9,20 @@ import {
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { CategoryRow } from "@/components/dashboard/categories/category-row";
-
-async function getCategories(projectId: string) {
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
+async function getCategories() {
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
+  const { getToken } = await auth();
+  const token = await getToken();
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL}/api/categories?projectId=${projectId}`,
     {
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
   );
 
@@ -25,15 +33,8 @@ async function getCategories(projectId: string) {
   return res.json();
 }
 
-export default async function CategoriesPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const projectId = searchParams.projectId as string;
-  const categories = await getCategories(
-    projectId ?? "cllznpdh70000q2x6ej91bkyu"
-  );
+export default async function CategoriesPage() {
+  const categories = await getCategories();
 
   return (
     <div className="flex flex-col gap-4">
