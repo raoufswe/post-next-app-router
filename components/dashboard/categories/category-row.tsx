@@ -12,14 +12,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { type Category } from "@prisma/client";
 
 interface CategoryRowProps {
-  category: {
-    id: string;
-    name: string;
-    description: string | null;
-    children?: CategoryRowProps["category"][];
-  };
+  category: Category & { children?: Category[] };
   level: number;
 }
 

@@ -12,6 +12,8 @@ import { PlusCircle } from "lucide-react";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
+import { type Supplier } from "@prisma/client";
+
 async function getSuppliers() {
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
@@ -35,7 +37,7 @@ async function getSuppliers() {
 }
 
 export default async function SuppliersPage() {
-  const suppliers = await getSuppliers();
+  const suppliers: Supplier[] = await getSuppliers();
 
   return (
     <div className="flex flex-col gap-4">

@@ -12,7 +12,13 @@ import { PlusCircle } from "lucide-react";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
-async function getProducts() {
+import { type Product, type Supplier } from "@prisma/client";
+
+type ProductWithSupplier = Product & {
+  supplier: Supplier;
+};
+
+async function getProducts(): Promise<ProductWithSupplier[]> {
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
   const { getToken } = await auth();
@@ -35,7 +41,7 @@ async function getProducts() {
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts();
+  const products: ProductWithSupplier[] = await getProducts();
 
   return (
     <div className="flex flex-col gap-4">

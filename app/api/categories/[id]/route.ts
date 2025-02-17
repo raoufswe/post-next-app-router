@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
 import { categorySchema } from "@/lib/schemas/category";
+import { NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
@@ -36,10 +37,19 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  await prisma.category.update({
-    where: { id: params.id },
-    data: { deletedAt: new Date() },
-  });
+  try {
+    const category = await prisma.category.update({
+      where: {
+        id: params.id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
 
-  return new Response(null, { status: 204 });
+    return NextResponse.json(category);
+  } catch (error) {
+    console.error("[CATEGORY_DELETE]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
 } 

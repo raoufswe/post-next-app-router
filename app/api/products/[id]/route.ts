@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
 import { uploadMediaFiles } from "@/lib/cloudinary";
 import { productSchema } from "@/lib/schemas/product";
+import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: NextRequest,
@@ -40,12 +41,21 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  await prisma.product.update({
-    where: { id: params.id },
-    data: { deletedAt: new Date() },
-  });
+  try {
+    const product = await prisma.product.update({
+      where: {
+        id: params.id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
 
-  return new Response(null, { status: 204 });
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error("[PRODUCT_DELETE]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
 }
 
 export async function GET(
