@@ -1,5 +1,5 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { successResponse, errorResponse } from "../../../utils/apiResponse";
 
 export async function POST(
   request: Request,
@@ -8,18 +8,15 @@ export async function POST(
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return errorResponse("Unauthorized", 401);
     }
 
     const clerk = await clerkClient();
     await clerk.invitations.revokeInvitation(params.id);
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true });
   } catch (error) {
-    console.error('Error revoking invitation:', error);
-    return NextResponse.json(
-      { error: "Failed to revoke invitation" },
-      { status: 500 }
-    );
+    console.error("[INVITATION_REVOKE]", error);
+    return errorResponse("Failed to revoke invitation", 500);
   }
 } 

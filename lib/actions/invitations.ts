@@ -1,73 +1,49 @@
 'use server'
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server";
-        
-interface CreateInvitationInput {
-  emailAddress: string;
-  role: string;
-}
+import {  fetchApi } from "@/lib/fetch";
+import { type Invitation } from "@/types";
+import { cookies } from "next/headers";
 
-export async function createInvitation(data: CreateInvitationInput) {
-  const { getToken } = await auth();
-  const token = await getToken();
-  try {
-    const response = await fetch('/api/invitations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create invitation');
-    }
+export async function createInvitation(
+  formData: FormData
+) {
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
 
-    const result = await response.json();
+  const data = {
+    emailAddress: formData.get("emailAddress"),
+    role: formData.get("role"),
+    projectId,
+  };
+
+  const response = await fetchApi<Invitation>('/api/invitations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+
+  if (response.success) {
     revalidatePath('/dashboard/users');
-    return result;
-  } catch (error) {
-    console.error('Error creating invitation:', error);
-    throw error;
   }
-}
 
-export async function deleteInvitation(id: string) {
-  try {
-    const response = await fetch(`/api/invitations/${id}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to delete invitation');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error deleting invitation:', error);
-    throw error;
-  }
+  return response;
 }
 
 export async function revokeInvitation(invitationId: string) {
-  try {
-    const response = await fetch(`/api/invitations/${invitationId}/revoke`, {
+  const cookieStore = await cookies();
+  const projectId = cookieStore.get("selectedProjectId")?.value;
+
+  const response = await fetchApi<Invitation>(
+    `/api/invitations/${invitationId}/revoke?projectId=${projectId}`,
+    {
       method: 'POST',
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to revoke invitation');
     }
+  );
 
+  if (response.success) {
     revalidatePath('/dashboard/users');
-    return await response.json();
-  } catch (error) {
-    console.error('Error revoking invitation:', error);
-    throw error;
   }
+
+  return response;
 }

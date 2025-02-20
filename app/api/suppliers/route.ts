@@ -1,31 +1,42 @@
 import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
 import { supplierSchema } from "@/lib/schemas/supplier";
+import { successResponse, errorResponse } from "../utils/apiResponse";
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const projectId = searchParams.get('projectId');
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId');
 
-  if (!projectId) {
-    return Response.json({ error: 'Project ID is required' }, { status: 400 });
+    if (!projectId) {
+      return errorResponse('Project ID is required', 400);
+    }
+
+    const suppliers = await prisma.supplier.findMany({
+      orderBy: { createdAt: 'asc' },
+      where: { deletedAt: null, projectId },
+    });
+
+    return successResponse(suppliers);
+  } catch (error) {
+    console.error("[SUPPLIER_LIST]", error);
+    return errorResponse("Failed to fetch suppliers", 500);
   }
-
-  const suppliers = await prisma.supplier.findMany({
-    orderBy: { createdAt: 'asc' },
-    where: { deletedAt: null, projectId },
-  });
-
-  return Response.json(suppliers);
 }
 
 export async function POST(request: NextRequest) {
-  const data = await request.json();
-  const validated = supplierSchema.parse(data);
-  const projectId = data.projectId;
+  try {
+    const data = await request.json();
+    const validated = supplierSchema.parse(data);
+    const projectId = data.projectId;
 
-  const supplier = await prisma.supplier.create({
-    data: { ...validated, projectId },
-  });
+    const supplier = await prisma.supplier.create({
+      data: { ...validated, projectId },
+    });
 
-  return Response.json(supplier);
+    return successResponse(supplier, 201);
+  } catch (error) {
+    console.error("[SUPPLIER_CREATE]", error);
+    return errorResponse("Failed to create supplier", 500);
+  }
 } 

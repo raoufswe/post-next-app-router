@@ -7,34 +7,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, FolderTree } from "lucide-react";
 import { CategoryRow } from "@/components/dashboard/categories/category-row";
 import { cookies } from "next/headers";
-import { auth } from "@clerk/nextjs/server";
+import { fetchApi } from "@/lib/fetch";
+import { type Category } from "@prisma/client";
+import { ErrorFallback } from "@/components/dashboard/error-fallback";
+import { EmptyState } from "@/components/dashboard/empty-state";
+
 async function getCategories() {
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
-  const { getToken } = await auth();
-  const token = await getToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/categories?projectId=${projectId}`,
-    {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+
+  const response = await fetchApi<Category[]>(
+    `/api/categories?projectId=${projectId}`
   );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch categories");
-  }
-
-  return res.json();
+  return response;
 }
 
 export default async function CategoriesPage() {
-  const categories = await getCategories();
+  const response = await getCategories();
+
+  if (!response.success) {
+    return <ErrorFallback error={response.error} />;
+  }
+
+  const categories = response.data;
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,22 +47,30 @@ export default async function CategoriesPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map((category) => (
-              <CategoryRow key={category.id} category={category} level={0} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {!categories?.length ? (
+        <EmptyState
+          title="No categories"
+          description="Add your first category to get started."
+          icon={FolderTree}
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((category) => (
+                <CategoryRow key={category.id} category={category} level={0} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

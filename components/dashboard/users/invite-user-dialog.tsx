@@ -19,29 +19,42 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { createInvitation } from "@/lib/actions/invitations";
 import { UserPlus } from "lucide-react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
 
-function InviteForm() {
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? "Sending..." : "Send Invitation"}
+    </Button>
+  );
+}
+
+function InviteForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
 
-  async function onSubmit(formData: FormData) {
+  async function clientAction(formData: FormData) {
     const result = await createInvitation(formData);
 
-    if (result.error) {
+    if (!result.success) {
       toast({
         title: "Error",
-        description: result.error,
+        description: result.error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Invitation sent successfully",
-      });
+      return;
     }
+
+    toast({
+      title: "Success",
+      description: "Invitation sent successfully",
+    });
+    onSuccess();
   }
 
   return (
-    <form action={onSubmit} className="flex flex-col gap-6 py-4">
+    <form action={clientAction} className="flex flex-col gap-6 py-4">
       <div className="grid gap-4">
         <div className="grid gap-2">
           <label htmlFor="email">Email address</label>
@@ -66,14 +79,16 @@ function InviteForm() {
           </Select>
         </div>
       </div>
-      <Button type="submit">Send Invitation</Button>
+      <SubmitButton />
     </form>
   );
 }
 
 export function InviteUserDialog() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
@@ -84,7 +99,7 @@ export function InviteUserDialog() {
         <DialogHeader>
           <DialogTitle>Invite New User</DialogTitle>
         </DialogHeader>
-        <InviteForm />
+        <InviteForm onSuccess={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );

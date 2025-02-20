@@ -1,13 +1,16 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { NextResponse } from "next/server";
 import { createInvitationSchema } from "@/lib/schemas/invitation";
+import { successResponse, errorResponse } from "../utils/apiResponse";
+import { NextRequest } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("projectId");
+    const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get('projectId');
+  
+    if (!projectId) {
+      return errorResponse('Project ID is required', 400);
+    }
 
     const clerk = await clerkClient();
     const { data: invitations } = await clerk.invitations.getInvitationList();
@@ -15,11 +18,11 @@ export async function GET(request: Request) {
     const filteredInvitations = invitations.filter(
       (invitation) => invitation.publicMetadata?.projectId === projectId
     );
-
-    return NextResponse.json(filteredInvitations);
-  } catch (error: any) {
-    console.error("Getting invitations failed", error);
-    return new NextResponse(error.message, { status: 500 });
+    return successResponse(filteredInvitations);
+  } catch (error: unknown) {
+    console.error("[INVITATION_LIST]", error);
+    const message = error instanceof Error ? error.message : "Failed to get invitations";
+    return errorResponse(message, 500);
   }
 }
 
@@ -27,14 +30,14 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return errorResponse("Unauthorized", 401);
     }
 
     const body = await request.json();
     const validated = createInvitationSchema.parse(body);
 
     const clerk = await clerkClient();
-    await clerk.invitations.createInvitation({
+   const data = await clerk.invitations.createInvitation({
       emailAddress: validated.emailAddress,
       publicMetadata: {
         isInvited: true,
@@ -44,12 +47,9 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return successResponse({ success: true, data}, 201);
   } catch (error) {
-    console.error('Error creating invitation:', error);
-    return NextResponse.json(
-      { error: "Failed to create invitation" },
-      { status: 500 }
-    );
+    console.error("[INVITATION_CREATE]", error);
+    return errorResponse("Failed to create invitation", 500);
   }
 } 

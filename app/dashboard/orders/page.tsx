@@ -8,30 +8,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cookies } from "next/headers";
-import { auth } from "@clerk/nextjs/server";
-interface OrderProduct {
-  id: string;
-  price: number;
-  quantity: number;
-  currency: string;
-  Product: {
-    id: string;
-    name: string;
-  };
-}
+import {
+  type Order as _Order,
+  type OrderProduct,
+  type User,
+} from "@prisma/client";
+import { fetchApi } from "@/lib/fetch";
+import { ErrorFallback } from "@/components/dashboard/error-fallback";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
-interface Order {
-  id: string;
-  status: "paid" | "unpaid" | "cancelled";
-  user: {
-    id: string;
-    name: string | null;
-  };
-  OrderProduct: OrderProduct[];
-}
+type Order = _Order & {
+  user: User;
+  orderProducts: OrderProduct[];
+};
 
 const STATUS_STYLES = {
   paid: "bg-green-100 text-green-800",
@@ -39,30 +31,25 @@ const STATUS_STYLES = {
   cancelled: "bg-red-100 text-red-800",
 } as const;
 
-async function getOrders(): Promise<Order[]> {
+async function getOrders() {
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
-  const { getToken } = await auth();
-  const token = await getToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/orders?projectId=${projectId}`,
-    {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+
+  const response = await fetchApi<Order[]>(
+    `/api/orders?projectId=${projectId}`
   );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch orders");
-  }
-
-  return res.json();
+  return response;
 }
 
 export default async function OrdersPage() {
-  const orders = await getOrders();
+  const response = await getOrders();
+
+  if (!response.success) {
+    return <ErrorFallback error={response.error} />;
+  }
+
+  const orders = response.data;
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,49 +63,57 @@ export default async function OrdersPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
-                <TableCell>{order.user.name ?? "Anonymous"}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={
-                      STATUS_STYLES[order.status as keyof typeof STATUS_STYLES]
-                    }
-                  >
-                    {order.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {order.orderProducts.reduce(
-                    (acc, item) => acc + item.price * item.quantity,
-                    0
-                  )}{" "}
-                  {order.orderProducts[0]?.currency}
-                </TableCell>
-                <TableCell className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/dashboard/orders/${order.id}`}>Edit</Link>
-                  </Button>
-                </TableCell>
+      {!orders?.length ? (
+        <EmptyState
+          title="No orders"
+          description="Add your first order to get started."
+          icon={ShoppingCart}
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.user.name ?? "Anonymous"}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        STATUS_STYLES[
+                          order.status as keyof typeof STATUS_STYLES
+                        ]
+                      }
+                    >
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {order.orderProducts.reduce(
+                      (acc, item) => acc + item.price * item.quantity,
+                      0
+                    )}{" "}
+                    {order.orderProducts[0]?.currency}
+                  </TableCell>
+                  <TableCell className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/dashboard/orders/${order.id}`}>Edit</Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

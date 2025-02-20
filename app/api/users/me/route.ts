@@ -1,14 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return errorResponse("Unauthorized", 401);
     }
-
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -19,8 +18,13 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(user);
-  } catch {
-    return new NextResponse("Internal Error", { status: 500 });
+    if (!user) {
+      return errorResponse("User not found", 404);
+    }
+
+    return successResponse(user);
+  } catch (error) {
+    console.error("[USER_GET]", error);
+    return errorResponse("Failed to fetch user", 500);
   }
 } 

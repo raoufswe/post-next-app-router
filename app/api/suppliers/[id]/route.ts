@@ -1,21 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
 import { supplierSchema } from "@/lib/schemas/supplier";
-import { NextResponse } from "next/server";
+import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const data = await request.json();
-  const validated = supplierSchema.parse(data);
+  try {
+    const data = await request.json();
+    const validated = supplierSchema.parse(data);
 
-  const supplier = await prisma.supplier.update({
-    where: { id: params.id },
-    data: validated,
-  });
+    const supplier = await prisma.supplier.update({
+      where: { id: params.id },
+      data: validated,
+    });
 
-  return Response.json(supplier);
+    return successResponse(supplier);
+  } catch (error) {
+    console.error("[SUPPLIER_UPDATE]", error);
+    return errorResponse("Failed to update supplier", 500);
+  }
 }
 
 export async function DELETE(
@@ -24,17 +29,13 @@ export async function DELETE(
 ) {
   try {
     const supplier = await prisma.supplier.update({
-      where: {
-        id: params.id,
-      },
-      data: {
-        deletedAt: new Date(),
-      },
+      where: { id: params.id },
+      data: { deletedAt: new Date() },
     });
 
-    return NextResponse.json(supplier);
+    return successResponse(supplier);
   } catch (error) {
     console.error("[SUPPLIER_DELETE]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return errorResponse("Failed to delete supplier", 500);
   }
 } 

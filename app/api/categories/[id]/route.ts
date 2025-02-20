@@ -1,36 +1,46 @@
 import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
 import { categorySchema } from "@/lib/schemas/category";
-import { NextResponse } from "next/server";
+import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const category = await prisma.category.findFirst({
-    where: { id: params.id, deletedAt: null },
-  });
+  try {
+    const category = await prisma.category.findFirst({
+      where: { id: params.id, deletedAt: null },
+    });
 
-  if (!category) {
-    return Response.json({ error: 'Category not found' }, { status: 404 });
+    if (!category) {
+      return errorResponse('Category not found', 404);
+    }
+
+    return successResponse(category);
+  } catch (error) {
+    console.error("[CATEGORY_GET]", error);
+    return errorResponse("Failed to fetch category", 500);
   }
-
-  return Response.json(category);
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const data = await request.json();
-  const validated = categorySchema.parse(data);
+  try {
+    const data = await request.json();
+    const validated = categorySchema.parse(data);
 
-  const category = await prisma.category.update({
-    where: { id: params.id },
-    data: validated,
-  });
+    const category = await prisma.category.update({
+      where: { id: params.id },
+      data: validated,
+    });
 
-  return Response.json(category);
+    return successResponse(category);
+  } catch (error) {
+    console.error("[CATEGORY_UPDATE]", error);
+    return errorResponse("Failed to update category", 500);
+  }
 }
 
 export async function DELETE(
@@ -39,17 +49,13 @@ export async function DELETE(
 ) {
   try {
     const category = await prisma.category.update({
-      where: {
-        id: params.id,
-      },
-      data: {
-        deletedAt: new Date(),
-      },
+      where: { id: params.id },
+      data: { deletedAt: new Date() },
     });
 
-    return NextResponse.json(category);
+    return successResponse(category);
   } catch (error) {
     console.error("[CATEGORY_DELETE]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return errorResponse("Failed to delete category", 500);
   }
 } 

@@ -8,36 +8,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Building2 } from "lucide-react";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { cookies } from "next/headers";
-import { auth } from "@clerk/nextjs/server";
 import { type Supplier } from "@prisma/client";
+import { fetchApi } from "@/lib/fetch";
+import { ErrorFallback } from "@/components/dashboard/error-fallback";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 async function getSuppliers() {
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
-  const { getToken } = await auth();
-  const token = await getToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/suppliers?projectId=${projectId}`,
-    {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+
+  const response = await fetchApi<Supplier[]>(
+    `/api/suppliers?projectId=${projectId}`
   );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch suppliers");
-  }
-
-  return res.json();
+  return response;
 }
 
 export default async function SuppliersPage() {
-  const suppliers: Supplier[] = await getSuppliers();
+  const response = await getSuppliers();
+
+  if (!response.success) {
+    return <ErrorFallback error={response.error} />;
+  }
+
+  const suppliers = response.data;
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,39 +48,47 @@ export default async function SuppliersPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {suppliers.map((supplier) => (
-              <TableRow key={supplier.id}>
-                <TableCell>{supplier.name}</TableCell>
-                <TableCell>{supplier.description}</TableCell>
-                <TableCell>{supplier.slug}</TableCell>
-                <TableCell className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/dashboard/suppliers/${supplier.id}`}>
-                      Edit
-                    </Link>
-                  </Button>
-                  <DeleteDialog
-                    id={supplier.id}
-                    name={supplier.name}
-                    url="/api/suppliers"
-                  />
-                </TableCell>
+      {!suppliers?.length ? (
+        <EmptyState
+          title="No suppliers"
+          description="Add your first supplier to get started."
+          icon={Building2}
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {suppliers.map((supplier) => (
+                <TableRow key={supplier.id}>
+                  <TableCell>{supplier.name}</TableCell>
+                  <TableCell>{supplier.description}</TableCell>
+                  <TableCell>{supplier.slug}</TableCell>
+                  <TableCell className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/dashboard/suppliers/${supplier.id}`}>
+                        Edit
+                      </Link>
+                    </Button>
+                    <DeleteDialog
+                      id={supplier.id}
+                      name={supplier.name}
+                      url="/api/suppliers"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
