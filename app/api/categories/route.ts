@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
       where: { 
         deletedAt: null,
-        parentId: null,
         projectId,
+        parentId: null
       },
       include: {
         parent: true,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-    
+
     return successResponse(categories);
   } catch (error) {
     console.error("[CATEGORY_LIST]", error);

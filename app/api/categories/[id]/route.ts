@@ -3,13 +3,36 @@ import { type NextRequest } from "next/server";
 import { categorySchema } from "@/lib/schemas/category";
 import { successResponse, errorResponse } from "../../utils/apiResponse";
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const data = await request.json();
+    const validated = categorySchema.parse(data);
+
+    const category = await prisma.category.update({
+      where: { id: params.id, deletedAt: null },
+      data: validated,
+    });
+
+    return successResponse(category);
+  } catch (error) {
+    console.error("[CATEGORY_UPDATE]", error);
+    return errorResponse("Failed to update category", 500);
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const category = await prisma.category.findFirst({
-      where: { id: params.id, deletedAt: null },
+    const category = await prisma.category.findUnique({
+      where: { 
+        id: params.id,
+        deletedAt: null
+      },
     });
 
     if (!category) {
@@ -20,26 +43,6 @@ export async function GET(
   } catch (error) {
     console.error("[CATEGORY_GET]", error);
     return errorResponse("Failed to fetch category", 500);
-  }
-}
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const data = await request.json();
-    const validated = categorySchema.parse(data);
-
-    const category = await prisma.category.update({
-      where: { id: params.id },
-      data: validated,
-    });
-
-    return successResponse(category);
-  } catch (error) {
-    console.error("[CATEGORY_UPDATE]", error);
-    return errorResponse("Failed to update category", 500);
   }
 }
 
