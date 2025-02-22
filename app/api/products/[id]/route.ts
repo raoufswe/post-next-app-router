@@ -14,6 +14,7 @@ export async function GET(
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
+      console.error("[PRODUCT_GET]", "Project ID is required");
       return errorResponse('Project ID is required', 400);
     }
 
@@ -26,6 +27,7 @@ export async function GET(
     });
 
     if (!product) {
+      console.error("[PRODUCT_GET]", "Product not found");
       return errorResponse('Product not found', 404);
     }
 

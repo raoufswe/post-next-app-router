@@ -36,6 +36,7 @@ export async function GET(
     });
 
     if (!category) {
+      console.error("[CATEGORY_GET]", "Category not found");
       return errorResponse('Category not found', 404);
     }
 

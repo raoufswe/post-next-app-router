@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const categorySlug = searchParams.get('categorySlug');
 
     if (!projectId) {
+      console.error("[PRODUCT_LIST]", "Project ID is required");
       return errorResponse('Project ID is required', 400);
     }
 

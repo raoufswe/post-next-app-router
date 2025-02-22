@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
+      console.error("[USER_GET]", "Unauthorized request");
       return errorResponse("Unauthorized", 401);
     }
 
@@ -19,6 +20,7 @@ export async function GET() {
     });
 
     if (!user) {
+      console.error("[USER_GET]", "User not found");
       return errorResponse("User not found", 404);
     }
 

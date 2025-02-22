@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId');
 
     if (!projectId) {
+      console.error("[SUPPLIER_LIST]", "Project ID is required");
       return errorResponse('Project ID is required', 400);
     }
 

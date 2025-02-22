@@ -16,6 +16,7 @@ export async function GET(
     });
 
     if (!supplier) {
+      console.error("[SUPPLIER_GET]", "Supplier not found");
       return errorResponse('Supplier not found', 404);
     }
 

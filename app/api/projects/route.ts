@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
+      console.error("[PROJECT_CREATE]", "Unauthorized request");
       return errorResponse("Unauthorized", 401);
     } 
 
@@ -39,6 +40,7 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
+      console.error("[PROJECT_LIST]", "Unauthorized request");
       return errorResponse("Unauthorized", 401);
     }
 

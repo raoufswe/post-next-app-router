@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId');
   
     if (!projectId) {
+      console.error("[INVITATION_LIST]", "Project ID is required");
       return errorResponse('Project ID is required', 400);
     }
 
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
+      console.error("[INVITATION_CREATE]", "Unauthorized request");
       return errorResponse("Unauthorized", 401);
     }
 
