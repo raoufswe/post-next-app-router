@@ -3,6 +3,29 @@ import { type NextRequest } from "next/server";
 import { supplierSchema } from "@/lib/schemas/supplier";
 import { successResponse, errorResponse } from "../../utils/apiResponse";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supplier = await prisma.supplier.findUnique({
+      where: { 
+        id: params.id,
+        deletedAt: null
+      },
+    });
+
+    if (!supplier) {
+      return errorResponse('Supplier not found', 404);
+    }
+
+    return successResponse(supplier);
+  } catch (error) {
+    console.error("[SUPPLIER_GET]", error);
+    return errorResponse("Failed to fetch supplier", 500);
+  }
+} 
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -12,7 +35,7 @@ export async function PATCH(
     const validated = supplierSchema.parse(data);
 
     const supplier = await prisma.supplier.update({
-      where: { id: params.id },
+      where: { id: params.id, deletedAt: null },
       data: validated,
     });
 
@@ -38,4 +61,4 @@ export async function DELETE(
     console.error("[SUPPLIER_DELETE]", error);
     return errorResponse("Failed to delete supplier", 500);
   }
-} 
+}

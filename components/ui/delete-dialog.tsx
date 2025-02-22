@@ -14,6 +14,7 @@ import { Trash2 } from "lucide-react";
 import { deleteResource } from "@/lib/actions/common";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface DeleteDialogProps {
   id: string;
@@ -26,15 +27,23 @@ export function DeleteDialog({ id, name, url, disabled }: DeleteDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const onDelete = () => {
     startTransition(async () => {
-      try {
-        await deleteResource(url, id);
+      const response = await deleteResource(url, id);
+
+      toast({
+        title: response.success ? "Success" : "Error",
+        description: response.success
+          ? "Item deleted successfully"
+          : response.error.message,
+        variant: response.success ? "default" : "destructive",
+      });
+
+      if (response.success) {
         setOpen(false);
         router.refresh();
-      } catch (error) {
-        console.error("Failed to delete:", error);
       }
     });
   };

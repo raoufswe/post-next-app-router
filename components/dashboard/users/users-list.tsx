@@ -15,7 +15,7 @@ import { revokeInvitation } from "@/lib/actions/invitations";
 import { type Invitation } from "@/types";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Users } from "lucide-react";
-import { useFormStatus } from "react-dom";
+import { useTransition } from "react";
 
 const STATUS_STYLES = {
   accepted: "bg-green-100 text-green-800",
@@ -23,30 +23,48 @@ const STATUS_STYLES = {
   revoked: "bg-red-100 text-red-800",
 } as const;
 
-function RevokeButton() {
-  const { pending } = useFormStatus();
+function InvitationRow({ invitation }: { invitation: Invitation }) {
+  const [isPending, startTransition] = useTransition();
+
+  const { toast } = useToast();
+
+  const onClick = () => {
+    startTransition(async () => {
+      const result = await revokeInvitation(invitation.id);
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.error.message,
+          variant: "destructive",
+        });
+      }
+    });
+  };
 
   return (
-    <Button variant="destructive" size="sm" disabled={pending} type="submit">
-      {pending ? "Revoking..." : "Revoke"}
-    </Button>
+    <TableRow>
+      <TableCell>{invitation.emailAddress}</TableCell>
+      <TableCell>
+        <Badge variant="outline" className={STATUS_STYLES[invitation.status]}>
+          {invitation.status}
+        </Badge>
+      </TableCell>
+      <TableCell>{invitation.publicMetadata?.role}</TableCell>
+      <TableCell>
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={isPending}
+          onClick={onClick}
+        >
+          {isPending ? "Revoking..." : "Revoke"}
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 }
 
 export function UsersList({ invitations }: { invitations: Invitation[] }) {
-  const { toast } = useToast();
-
-  async function handleRevoke(invitationId: string) {
-    const result = await revokeInvitation(invitationId);
-    if (!result.success) {
-      toast({
-        title: "Error",
-        description: result.error.message,
-        variant: "destructive",
-      });
-    }
-  }
-
   if (!invitations.length) {
     return (
       <EmptyState
@@ -70,23 +88,7 @@ export function UsersList({ invitations }: { invitations: Invitation[] }) {
         </TableHeader>
         <TableBody>
           {invitations.map((invitation) => (
-            <TableRow key={invitation.id}>
-              <TableCell>{invitation.emailAddress}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={STATUS_STYLES[invitation.status]}
-                >
-                  {invitation.status}
-                </Badge>
-              </TableCell>
-              <TableCell>{invitation.publicMetadata?.role}</TableCell>
-              <TableCell>
-                <form action={() => handleRevoke(invitation.id)}>
-                  <RevokeButton />
-                </form>
-              </TableCell>
-            </TableRow>
+            <InvitationRow key={invitation.id} invitation={invitation} />
           ))}
         </TableBody>
       </Table>

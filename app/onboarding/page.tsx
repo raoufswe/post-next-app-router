@@ -1,17 +1,9 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,22 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { createProject } from "@/lib/actions/projects";
-import { type CreateProjectInput } from "@/lib/schemas/project";
 
 export default function OnboardingPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const form = useForm<CreateProjectInput>({
-    defaultValues: {
-      name: "",
-      size: "small",
-    },
-  });
 
-  async function onSubmit(data: CreateProjectInput) {
+  async function handleAction(formData: FormData) {
     try {
+      const data = {
+        name: formData.get("name") as string,
+        size: formData.get("size") as "small" | "scale",
+      };
+
       await createProject(data);
       router.push("/dashboard");
     } catch {
@@ -58,52 +47,29 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My Project" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <form action={handleAction} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name">Project Name</label>
+            <Input name="name" placeholder="My Project" />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="size"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company Size</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select company size" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="small">Small (0-10)</SelectItem>
-                      <SelectItem value="scale">Scale</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="space-y-2">
+            <label htmlFor="size">Company Size</label>
+            <Select name="size" defaultValue="small">
+              <SelectTrigger>
+                <SelectValue placeholder="Select company size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">Small (0-10)</SelectItem>
+                <SelectItem value="scale">Scale</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            <Button type="submit" className="w-full">
-              Create Project
-            </Button>
-          </form>
-        </Form>
+          <Button type="submit" className="w-full">
+            Create Project
+          </Button>
+        </form>
       </div>
     </div>
   );
