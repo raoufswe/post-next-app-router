@@ -86,3 +86,40 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Add these styles to customize react-select */
+.react-select__control {
+  @apply !min-h-[2.25rem] !bg-background !border-input !rounded-md !shadow-sm;
+}
+
+.react-select__control--is-focused {
+  @apply !border-ring !ring-2 !ring-ring !ring-offset-2;
+}
+
+.react-select__menu {
+  @apply !bg-popover !border !border-input !rounded-md !shadow-md;
+}
+
+.react-select__option {
+  @apply !bg-transparent !text-foreground cursor-default;
+}
+
+.react-select__option--is-focused {
+  @apply !bg-accent !text-accent-foreground;
+}
+
+.react-select__value-container {
+  @apply !py-0;
+}
+
+.react-select__multi-value {
+  @apply !bg-secondary !rounded-md;
+}
+
+.react-select__multi-value__label {
+  @apply !text-secondary-foreground !py-0.5 !text-sm;
+}
+
+.react-select__multi-value__remove {
+  @apply hover:!bg-destructive hover:!text-destructive-foreground !rounded-md;
+}
