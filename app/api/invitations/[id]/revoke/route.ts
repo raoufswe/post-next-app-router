@@ -3,9 +3,10 @@ import { successResponse, errorResponse } from "../../../utils/apiResponse";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: Promise<{ params: { id: string } }>
 ) {
   try {
+    const { params } = await context;
     const { userId } = await auth();
     if (!userId) {
       return errorResponse("Unauthorized", 401);
