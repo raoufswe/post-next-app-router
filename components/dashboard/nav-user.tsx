@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { User } from "@prisma/client";
 
 export function NavUser({ user }: { user: User }) {
-  const { openUserProfile } = useClerk();
+  const { openUserProfile, signOut } = useClerk();
   const { isMobile } = useSidebar();
 
   return (
@@ -114,7 +114,7 @@ export function NavUser({ user }: { user: User }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()}>
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
