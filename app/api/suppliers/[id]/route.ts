@@ -5,10 +5,10 @@ import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function GET(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const supplier = await prisma.supplier.findUnique({
       where: { 
         id: params.id,
@@ -30,10 +30,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const data = await request.json();
     const validated = supplierSchema.parse(data);
 
@@ -51,10 +51,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const supplier = await prisma.supplier.update({
       where: { id: params.id },
       data: { deletedAt: new Date() },

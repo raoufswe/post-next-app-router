@@ -6,10 +6,10 @@ import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function GET(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const { id } = params;
     const searchParams = request.nextUrl.searchParams;
     const projectId = searchParams.get('projectId');
@@ -41,10 +41,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const data = await request.json();
     const validated = productSchema.parse(data);
     const { categoryIds, mediaFiles, ...rest } = validated;
@@ -80,10 +80,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const product = await prisma.product.update({
       where: { id: params.id },
       data: { deletedAt: new Date() },

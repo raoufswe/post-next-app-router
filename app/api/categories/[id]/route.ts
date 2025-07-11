@@ -5,10 +5,10 @@ import { successResponse, errorResponse } from "../../utils/apiResponse";
 
 export async function PATCH(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const data = await request.json();
     const validated = categorySchema.parse(data);
 
@@ -26,10 +26,10 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const category = await prisma.category.findUnique({
       where: { 
         id: params.id,
@@ -51,10 +51,10 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  context: Promise<{ params: { id: string } }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const params = await context.params;
     const category = await prisma.category.update({
       where: { id: params.id },
       data: { deletedAt: new Date() },
