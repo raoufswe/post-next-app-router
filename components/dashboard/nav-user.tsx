@@ -33,8 +33,6 @@ export function NavUser({ user }: { user: User }) {
   const { openUserProfile } = useClerk();
   const { isMobile } = useSidebar();
 
-  const lastName = user.name?.split(" ").slice(1).join(" ");
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
