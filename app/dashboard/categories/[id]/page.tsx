@@ -4,11 +4,12 @@ import { fetchApi } from "@/lib/fetch";
 import type { Category } from "@prisma/client";
 import { updateCategory } from "@/lib/actions/categories";
 
-export default async function EditCategoryPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditCategoryPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const id = await params.id;
   const category = await fetchApi<Category>(`/api/categories/${id}`);
 

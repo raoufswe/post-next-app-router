@@ -4,11 +4,12 @@ import { fetchApi } from "@/lib/fetch";
 import type { Supplier } from "@prisma/client";
 import { updateSupplier } from "@/lib/actions/suppliers";
 
-export default async function EditSupplierPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditSupplierPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const supplier = await fetchApi<Supplier>(`/api/suppliers/${params.id}`);
 
   if (!supplier.success) {

@@ -18,8 +18,8 @@ import {
 import { useState } from "react";
 import { RichTextEditor } from "@/components/ui/rich-text-editor/rich-text-editor";
 import FileUploader from "@/components/ui/file-uploader";
+import { Descendant } from "slate";
 import { FilePondFile } from "filepond";
-
 const defaultDescription = [
   {
     type: "paragraph",
@@ -126,7 +126,10 @@ export function ProductForm({
           name="description"
           value={JSON.stringify(description)}
         />
-        <RichTextEditor value={description} onChange={setDescription} />
+        <RichTextEditor
+          value={description as Descendant[]}
+          onChange={setDescription}
+        />
       </div>
 
       <div className="space-y-2">
@@ -177,6 +180,7 @@ export function ProductForm({
       <div className="space-y-2">
         <label htmlFor="media">Media</label>
         <FileUploader
+        //@ts-expect-error files prop is not defined in FilePondHookProps
           files={mediaFiles}
           onupdatefiles={setMediaFiles}
           allowMultiple={true}

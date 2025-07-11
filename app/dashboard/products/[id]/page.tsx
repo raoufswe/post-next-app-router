@@ -9,11 +9,12 @@ type Product = PrismaProduct & {
   categoryIds: string[];
 };
 
-export default async function EditProductPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditProductPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const cookieStore = await cookies();
   const projectId = cookieStore.get("selectedProjectId")?.value;
 
