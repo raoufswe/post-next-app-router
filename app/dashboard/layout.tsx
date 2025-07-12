@@ -1,10 +1,11 @@
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { ProjectInitializer } from "@/components/dashboard/project-initializer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { fetchApi } from "@/lib/fetch";
-import { type User, type Project } from "@prisma/client";
+import { type Project, type User } from "@prisma/client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ErrorFallback } from "@/components/dashboard/error-fallback";
 
 type UserWithProjects = User & {
@@ -28,15 +29,12 @@ async function getUserData() {
     userData.projects.find((p: Project) => p.id === selectedProjectId) ??
     userData.projects[0];
 
-  if (!selectedProjectId) {
-    cookieStore.set("selectedProjectId", selectedProject.id, { path: "/" });
-  }
-
   return {
     ...response,
     data: {
       projects: userData.projects,
       selectedProject,
+      selectedProjectId,
       user: userData,
     },
   };
@@ -59,7 +57,13 @@ export default async function DashboardLayout({
         <DashboardHeader />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {response.success ? (
-            children
+            <>
+              <ProjectInitializer
+                selectedProjectId={response.data.selectedProjectId}
+                defaultProjectId={response.data.selectedProject.id}
+              />
+              {children}
+            </>
           ) : (
             <ErrorFallback error={response.error} />
           )}
