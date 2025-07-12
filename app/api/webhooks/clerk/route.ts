@@ -39,31 +39,42 @@ export async function POST(req: Request) {
       projectId: string;
     };
 
-    if (!isInvited) {
-      return successResponse({ message: 'User not invited' });
-    }
-
     try {
-      await prisma.user.create({
-        data: {
-          id,
-          email: email_addresses[0]?.email_address as string,
-          role,
-        },
-      });
+      const userEmail = email_addresses[0]?.email_address;
+      if (!userEmail) {
+        return errorResponse('Email address is missing', 400);
+      }
 
-      await prisma.project.update({
-        where: { id: projectId },
-        data: {
-          users: {
-            connect: { id }
-          }
-        }
-      });
+      if (isInvited) {
+        await prisma.user.create({
+          data: {
+            id,
+            email: userEmail,
+            role,
+          },
+        });
+
+        await prisma.project.update({
+          where: { id: projectId },
+          data: {
+            users: {
+              connect: { id },
+            },
+          },
+        });
+      } else {
+        await prisma.user.create({
+          data: {
+            id,
+            email: userEmail,
+            role: 'super_admin',
+          },
+        });
+      }
 
       return successResponse({ message: 'Webhook processed successfully' });
     } catch (error) {
-      console.error("[WEBHOOK_CLERK_DB]", error);
+      console.error('[WEBHOOK_CLERK_DB]', error);
       return errorResponse('Database operation failed', 500);
     }
   }
